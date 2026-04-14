@@ -1,0 +1,45 @@
+// ==============================
+// FLEX SENSOR CALIBRATION CODE
+// ==============================
+
+// Flex Pins (5 fingers)
+#define FLEX_INDEX    32
+#define FLEX_MIDDLE   35
+#define FLEX_RING     34
+#define FLEX_PINKY    36
+#define FLEX_THUMB    33   // or use 39 if you're using VN
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("=== FLEX SENSOR CALIBRATION MODE ===");
+  Serial.println("Step 1: Keep hand OPEN ✋");
+  Serial.println("Step 2: Note values");
+  Serial.println("Step 3: Close hand ✊ and note values\n");
+}
+
+void loop() {
+
+  int indexVal  = readStable(FLEX_INDEX);
+  int middleVal = readStable(FLEX_MIDDLE);
+  int ringVal   = readStable(FLEX_RING);
+  int pinkyVal  = readStable(FLEX_PINKY);
+  int thumbVal  = readStable(FLEX_THUMB);
+
+  Serial.print("INDEX: ");  Serial.print(indexVal);
+  Serial.print(" | MIDDLE: "); Serial.print(middleVal);
+  Serial.print(" | RING: ");   Serial.print(ringVal);
+  Serial.print(" | PINKY: ");  Serial.print(pinkyVal);
+  Serial.print(" | THUMB: ");  Serial.println(thumbVal);
+
+  delay(500);
+}
+
+// 🔹 Stable reading (averaging)
+int readStable(int pin) {
+  int sum = 0;
+  for (int i = 0; i < 10; i++) {
+    sum += analogRead(pin);
+    delay(5);
+  }
+  return sum / 10;
+}
