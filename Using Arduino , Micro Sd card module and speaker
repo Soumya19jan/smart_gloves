@@ -1,0 +1,71 @@
+#include <SPI.h>
+#include <SD.h>
+#include <TMRpcm.h>
+
+#define SD_CS  10
+#define SPEAKER_PIN 9   // TMRpcm requires Timer1 → Pin 9
+
+#define INDEX  A0
+#define MIDDLE A1
+#define RING   A2
+#define PINKY  A3
+
+// Adjusted thresholds (midpoint between open and closed readings)
+int tIndex  = 957;   // was 970 — now (946+968)/2 = 957
+int tMiddle = 979;   // (958+1000)/2
+int tRing   = 788;   // (743+834)/2
+int tPinky  = 855;   // (819+892)/2
+
+TMRpcm audio;
+
+String lastGesture = "";  // prevent replaying same file repeatedly
+
+void setup() {
+  Serial.begin(115200);
+
+  audio.speakerPin = SPEAKER_PIN;
+  audio.setVolume(5);       // 0–7
+  audio.quality(1);         // 1 = higher quality
+
+  if (!SD.begin(SD_CS)) {
+    Serial.println("SD Failed!");
+    while (1);
+  }
+  Serial.println("SD Ready");
+}
+
+void loop() {
+  int i = analogRead(INDEX);
+  int m = analogRead(MIDDLE);
+  int r = analogRead(RING);
+  int p = analogRead(PINKY);
+
+  Serial.print("I:"); Serial.print(i);
+  Serial.print(" M:"); Serial.print(m);
+  Serial.print(" R:"); Serial.print(r);
+  Serial.print(" P:"); Serial.println(p);
+
+  bool indexBent  = (i > tIndex);
+  bool middleBent = (m > tMiddle);
+  bool ringBent   = (r > tRing);
+  bool pinkyBent  = (p > tPinky);
+
+  String gesture = "";
+
+  if      ( indexBent && !middleBent && !ringBent && !pinkyBent)  gesture = "one.wav";
+  else if ( indexBent &&  middleBent && !ringBent && !pinkyBent)  gesture = "two.wav";
+  else if ( indexBent &&  middleBent &&  ringBent && !pinkyBent)  gesture = "three.wav";
+  else if ( indexBent &&  middleBent &&  ringBent &&  pinkyBent)  gesture = "four.wav";
+
+  // Only play if gesture changed and audio isn't already playing
+  if (gesture != "" && gesture != lastGesture && !audio.isPlaying()) {
+    Serial.print("Playing: ");
+    Serial.println(gesture);
+    audio.play(gesture.c_str());
+    lastGesture = gesture;
+  }
+
+  if (gesture == "") lastGesture = "";  // reset when hand is open
+
+  delay(100);
+}
