@@ -1,0 +1,102 @@
+#include <WiFi.h>
+
+// 🔹 WIFI
+const char* ssid = "****";
+const char* password = "****";
+const char* host = "****";
+const int port = ****;
+
+WiFiClient client;
+
+// 🔹 FLEX PINS (NO THUMB)
+#define INDEX   32
+#define MIDDLE  35
+#define RING    34
+#define PINKY   36
+
+// 🔹 THRESHOLDS
+#define INDEX_TH   3950
+#define MIDDLE_TH  4000
+#define RING_TH    2950
+#define PINKY_TH   3200
+
+void setup() {
+  Serial.begin(115200);
+
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting WiFi");
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("\nConnected ✅");
+}
+
+void loop() {
+
+  int i = analogRead(INDEX);
+  int m = analogRead(MIDDLE);
+  int r = analogRead(RING);
+  int p = analogRead(PINKY);
+
+  bool f[4];
+
+  f[0] = (i > INDEX_TH);
+  f[1] = (m > MIDDLE_TH);
+  f[2] = (r > RING_TH);
+  f[3] = (p > PINKY_TH);
+
+  String gesture = "";
+
+  // ✋ HELLO (all straight)
+  if (!f[0] && !f[1] && !f[2] && !f[3]) {
+    gesture = "Hello";
+  }
+
+  // ✊ HELP (all bent)
+  else if (f[0] && f[1] && f[2] && f[3]) {
+    gesture = "Help";
+  }
+
+  // YES (only index bent)
+  else if (f[0] && !f[1] && !f[2] && !f[3]) {
+    gesture = "Yes";
+  }
+
+  // NO (index + middle bent)
+  else if (f[0] && f[1] && !f[2] && !f[3]) {
+    gesture = "No";
+  }
+
+  // THANK YOU (only index straight)
+  else if (!f[0] && f[1] && f[2] && f[3]) {
+    gesture = "Thank you";
+  }
+
+  // 🔹 DEBUG
+  Serial.print("I:");
+  Serial.print(i);
+  Serial.print(" M:");
+  Serial.print(m);
+  Serial.print(" R:");
+  Serial.print(r);
+  Serial.print(" P:");
+  Serial.println(p);
+
+  Serial.println("Gesture: " + gesture);
+
+  // 🔹 SEND
+  if (gesture != "") {
+    if (client.connect(host, port)) {
+      client.println(gesture);
+      client.stop();
+      Serial.println("Sent ✅");
+    } else {
+      Serial.println("❌ Connection FAILED");
+    }
+  }
+
+  delay(1500);
+}
