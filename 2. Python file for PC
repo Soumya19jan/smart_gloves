@@ -1,0 +1,28 @@
+#name it : server.py
+import socket
+import os
+
+HOST = '0.0.0.0'
+PORT = 5050
+
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.bind((HOST, PORT))
+server.listen(5)
+
+print("🟢 Listening for glove...")
+
+last_msg = ""
+
+while True:
+    client, addr = server.accept()
+    data = client.recv(1024).decode().strip()
+
+    if data:
+        print("Received:", data)
+
+        # Avoid repeating same word
+        if data != last_msg:
+            os.system(f'say "{data}"')
+            last_msg = data
+
+    client.close()
